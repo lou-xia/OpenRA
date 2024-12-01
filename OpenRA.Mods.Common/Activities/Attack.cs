@@ -95,7 +95,7 @@ namespace OpenRA.Mods.Common.Activities
 
 		public override bool Tick(Actor self)
 		{
-			if (State != ActivityState.Canceling && !HaveArmamentsFor(target))
+			if (!IsCanceling && !HaveArmamentsFor(target))
 				Cancel(self, true);
 
 			if (!TickChild(self))

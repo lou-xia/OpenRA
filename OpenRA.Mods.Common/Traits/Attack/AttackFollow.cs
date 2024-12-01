@@ -263,6 +263,7 @@ namespace OpenRA.Mods.Common.Traits
 				this.targetLineColor = targetLineColor;
 				this.source = source;
 				isAircraft = self.Info.HasTraitInfo<AircraftInfo>();
+				ChildHasPriority = false;
 
 				// The target may become hidden between the initial order request and the first tick (e.g. if queued)
 				// Moving to any position (even if quite stale) is still better than immediately giving up
@@ -288,6 +289,12 @@ namespace OpenRA.Mods.Common.Traits
 
 			public override bool Tick(Actor self)
 			{
+				if (!IsCanceling && !HaveArmamentsFor(target, self))
+					Cancel(self, true);
+
+				if (!TickChild(self))
+					return false;
+
 				returnToBase = false;
 
 				if (IsCanceling)
@@ -387,7 +394,7 @@ namespace OpenRA.Mods.Common.Traits
 					}
 
 					returnToBase = true;
-					return attack.Info.AbortOnResupply;
+					return false;
 				}
 
 				var pos = self.CenterPosition;
@@ -439,6 +446,15 @@ namespace OpenRA.Mods.Common.Traits
 					if (!returnToBase || !attack.Info.AbortOnResupply)
 						yield return new TargetLineNode(useLastVisibleTarget ? lastVisibleTarget : target, targetLineColor.Value);
 				}
+			}
+
+			bool HaveArmamentsFor(Target target, Actor self)
+			{
+				foreach (var attack in self.TraitsImplementing<AttackFollow>().ToArray().Where(t => !t.IsTraitDisabled))
+					if (attack.ChooseArmamentsForTarget(target, forceAttack).Any())
+						return true;
+
+				return false;
 			}
 		}
 	}
